@@ -3,57 +3,123 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Clinic Booking</title>
+<title>CareSlot – Clinic Appointment Booking</title>
 <style>
-  body{font-family:system-ui,sans-serif;max-width:760px;margin:2rem auto;padding:0 1rem;color:#222}
-  h1{font-size:1.4rem} h2{font-size:1.1rem;margin-top:1.8rem}
-  input,select,button{padding:.5rem;margin:.2rem 0;font-size:1rem}
-  button{cursor:pointer}
-  .card{border:1px solid #ddd;border-radius:8px;padding:1rem;margin:.6rem 0}
-  .row{display:flex;justify-content:space-between;align-items:center;gap:1rem;border-bottom:1px solid #eee;padding:.5rem 0}
-  .err{color:#b00020}.muted{color:#666;font-size:.9rem}
-  .cancelled{text-decoration:line-through;color:#999}
+  :root{--ink:#10211d;--muted:#52665f;--bg:#f4f8f6;--card:#fff;--line:#dbe6e2;--brand:#0b6a56;--brand-dark:#074a3c;--tint:#d8eee7;--err:#8a1c12;--err-bg:#fde8e6}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);line-height:1.5}
+  button,input,select{font:inherit}
+  .top{background:var(--card);border-bottom:1px solid var(--line)}
+  .top-in{max-width:1080px;margin:0 auto;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .brand{font-weight:800;font-size:20px;color:var(--brand)}
+  .who{display:flex;align-items:center;gap:12px;font-size:14px;color:var(--muted)}
+  .badge{background:var(--tint);color:var(--brand-dark);padding:2px 10px;border-radius:999px;font-size:12px;font-weight:600;text-transform:capitalize}
+  main{max-width:1080px;margin:0 auto;padding:28px 20px 60px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px}
+  h1{font-size:30px;line-height:1.15;margin:0 0 10px}
+  h2{font-size:18px;margin:0 0 14px}
+  .muted{color:var(--muted);font-size:14px}
+  label{display:block;font-size:14px;font-weight:600;margin:12px 0 4px}
+  input,select{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--ink)}
+  input:focus,select:focus,button:focus-visible{outline:3px solid #9fd8c8;outline-offset:1px}
+  .btn{background:var(--brand);color:#fff;border:0;border-radius:10px;padding:12px 18px;font-weight:700;cursor:pointer;min-height:44px}
+  .btn:hover{background:var(--brand-dark)}
+  .btn.full{width:100%;margin-top:18px}
+  .btn.ghost{background:transparent;color:var(--brand);border:1.5px solid var(--brand)}
+  .btn.ghost:hover{background:var(--tint)}
+  .btn.small{padding:6px 12px;min-height:34px;font-size:14px}
+  .btn.danger{background:transparent;color:var(--err);border:1.5px solid #e7b8b3}
+  .btn.danger:hover{background:var(--err-bg)}
+  .link{background:none;border:0;color:var(--brand);font-weight:600;cursor:pointer;padding:4px;text-decoration:underline}
+  .toast{display:none;margin-bottom:16px;padding:12px 14px;border-radius:10px;font-size:15px}
+  .toast.err{display:block;background:var(--err-bg);color:var(--err)}
+  .toast.ok{display:block;background:var(--tint);color:var(--brand-dark)}
+  .auth{display:flex;flex-wrap:wrap;gap:40px;align-items:center;padding-top:30px}
+  .auth-intro{flex:1 1 360px}
+  .auth-intro p{font-size:18px;color:var(--muted);max-width:460px}
+  .auth-card{flex:1 1 340px;max-width:440px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:20px;align-items:start}
+  .doc{display:flex;align-items:center;gap:12px;padding:10px 12px;border:1.5px solid var(--line);border-radius:10px;margin-bottom:8px;cursor:pointer}
+  .doc:has(input:checked){border-color:var(--brand);background:#eef8f4}
+  .doc input{width:auto;margin:0}
+  .doc b{display:block}
+  .row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
+  .row:last-child{border-bottom:0}
+  .status{font-size:12px;font-weight:700;padding:2px 10px;border-radius:999px}
+  .status.booked{background:var(--tint);color:var(--brand-dark)}
+  .status.cancelled{background:#eee;color:#666}
+  .cancelled-row{opacity:.6}
+  .inline{display:flex;flex-wrap:wrap;gap:10px}
+  .inline input{flex:1 1 160px}
+  .hidden{display:none}
 </style>
 </head>
 <body>
-<h1>Clinic Appointment Booking</h1>
-<div id="msg" class="err"></div>
+<div class="top"><div class="top-in">
+  <div class="brand">CareSlot</div>
+  <div class="who hidden" id="who"><span id="whoName"></span><span class="badge" id="whoRole"></span><button class="btn ghost small" onclick="logout()">Log out</button></div>
+</div></div>
 
-<div id="authBox" class="card">
-  <h2 style="margin-top:0">Login / Register</h2>
-  <input id="name" placeholder="Name (register only)"><br>
-  <input id="email" placeholder="Email"><br>
-  <input id="password" type="password" placeholder="Password (min 8 chars)"><br>
-  <button onclick="login()">Login</button>
-  <button onclick="register()">Register</button>
-</div>
+<main>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-<div id="app" style="display:none">
-  <p><span id="who"></span> <button onclick="logout()">Logout</button></p>
+  <!-- signed out -->
+  <section id="authView" class="auth">
+    <div class="auth-intro">
+      <h1>Book your clinic visit in a minute.</h1>
+      <p>Choose a doctor, pick a time, and get a confirmed slot. No phone calls, no double bookings.</p>
+    </div>
+    <div class="card auth-card">
+      <h2 id="authTitle">Log in</h2>
+      <div id="nameWrap" class="hidden"><label for="name">Full name</label><input id="name" autocomplete="name"></div>
+      <label for="email">Email</label><input id="email" type="email" autocomplete="email">
+      <label for="password">Password</label><input id="password" type="password" autocomplete="current-password" placeholder="At least 8 characters">
+      <button class="btn full" id="authBtn" onclick="submitAuth()">Log in</button>
+      <p class="muted" style="margin:16px 0 0"><span id="authSwap">New here?</span> <button class="link" id="authToggle" onclick="toggleMode()">Create an account</button></p>
+    </div>
+  </section>
 
-  <div id="adminBox" class="card" style="display:none">
-    <h2 style="margin-top:0">Admin: add doctor</h2>
-    <input id="dname" placeholder="Doctor name">
-    <input id="dspec" placeholder="Specialization">
-    <button onclick="addDoctor()">Add</button>
-  </div>
+  <!-- signed in -->
+  <section id="appView" class="hidden">
+    <div class="grid">
+      <div class="card">
+        <h2>Book an appointment</h2>
+        <div id="doctors"></div>
+        <label for="slot">Date and time</label>
+        <input id="slot" type="datetime-local" step="1800">
+        <p class="muted" style="margin:6px 0 0">Slots start on the hour or half hour.</p>
+        <button class="btn full" onclick="book()">Confirm booking</button>
+      </div>
+      <div class="card">
+        <h2 id="apptTitle">Your appointments</h2>
+        <div id="appts"></div>
+      </div>
+    </div>
 
-  <h2>Book an appointment</h2>
-  <div class="card">
-    <select id="doctorSel"></select>
-    <input id="slot" type="datetime-local" step="1800">
-    <button onclick="book()">Book</button>
-    <div class="muted">Slots are on the hour or half hour.</div>
-  </div>
-
-  <h2>Appointments</h2>
-  <div id="appts"></div>
-</div>
+    <div class="card hidden" id="adminBox" style="margin-top:20px">
+      <h2>Admin: manage doctors</h2>
+      <div class="inline">
+        <input id="dname" placeholder="Doctor name" aria-label="Doctor name">
+        <input id="dspec" placeholder="Specialization" aria-label="Specialization">
+        <button class="btn" onclick="addDoctor()">Add doctor</button>
+      </div>
+      <div id="adminDocs" style="margin-top:14px"></div>
+    </div>
+  </section>
+</main>
 
 <script>
 let token = localStorage.getItem('token');
 let user = JSON.parse(localStorage.getItem('user') || 'null');
+let registering = false;
 const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+function toast(msg, type) {
+  const t = $('toast');
+  t.textContent = msg || '';
+  t.className = 'toast' + (msg ? ' ' + (type || 'err') : '');
+}
 
 async function api(path, method = 'GET', body) {
   const res = await fetch('/api' + path, {
@@ -66,60 +132,109 @@ async function api(path, method = 'GET', body) {
   if (!res.ok) throw new Error(data.error || 'Request failed');
   return data;
 }
-const show = (m) => ($('msg').textContent = m || '');
-const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
-function saveSession(d) {
-  token = d.token; user = d.user;
-  localStorage.setItem('token', token);
-  localStorage.setItem('user', JSON.stringify(user));
-  render();
+function toggleMode() {
+  registering = !registering;
+  $('authTitle').textContent = registering ? 'Create your account' : 'Log in';
+  $('authBtn').textContent = registering ? 'Register' : 'Log in';
+  $('authSwap').textContent = registering ? 'Already registered?' : 'New here?';
+  $('authToggle').textContent = registering ? 'Log in' : 'Create an account';
+  $('nameWrap').classList.toggle('hidden', !registering);
+  $('password').autocomplete = registering ? 'new-password' : 'current-password';
+  toast();
 }
-async function login() {
-  try { show(); saveSession(await api('/auth/login', 'POST', { email: $('email').value, password: $('password').value })); }
-  catch (e) { show(e.message); }
+
+async function submitAuth() {
+  try {
+    toast();
+    const body = { email: $('email').value, password: $('password').value };
+    if (registering) body.name = $('name').value;
+    const d = await api(registering ? '/auth/register' : '/auth/login', 'POST', body);
+    token = d.token; user = d.user;
+    localStorage.setItem('token', token);
+    localStorage.setItem('user', JSON.stringify(user));
+    $('password').value = '';
+    render();
+  } catch (e) { toast(e.message); }
 }
-async function register() {
-  try { show(); saveSession(await api('/auth/register', 'POST', { name: $('name').value, email: $('email').value, password: $('password').value })); }
-  catch (e) { show(e.message); }
+
+function logout() {
+  localStorage.clear(); token = user = null; toast(); render();
 }
-function logout() { localStorage.clear(); token = user = null; render(); }
 
 async function loadDoctors() {
   const docs = await api('/doctors');
-  $('doctorSel').innerHTML = docs.map((d) => `<option value="${d.id}">${esc(d.name)} (${esc(d.specialization)})</option>`).join('');
+  $('doctors').innerHTML = docs.length
+    ? docs.map((d, i) => `<label class="doc"><input type="radio" name="doc" value="${d.id}" ${i === 0 ? 'checked' : ''}>
+        <span><b>${esc(d.name)}</b><span class="muted">${esc(d.specialization)}</span></span></label>`).join('')
+    : '<p class="muted">No doctors available yet. An admin needs to add one.</p>';
+  $('adminDocs').innerHTML = docs.map((d) => `<div class="row"><div><b>${esc(d.name)}</b>
+      <span class="muted"> · ${esc(d.specialization)}</span></div>
+      <button class="btn danger small" onclick="removeDoctor(${d.id})">Remove</button></div>`).join('');
 }
+
 async function addDoctor() {
-  try { show(); await api('/doctors', 'POST', { name: $('dname').value, specialization: $('dspec').value });
-    $('dname').value = $('dspec').value = ''; loadDoctors(); } catch (e) { show(e.message); }
+  try {
+    toast();
+    await api('/doctors', 'POST', { name: $('dname').value, specialization: $('dspec').value });
+    $('dname').value = $('dspec').value = '';
+    toast('Doctor added.', 'ok');
+    loadDoctors();
+  } catch (e) { toast(e.message); }
 }
+
+async function removeDoctor(id) {
+  if (!confirm('Remove this doctor? Their appointments will be deleted too.')) return;
+  try { await api('/doctors/' + id, 'DELETE'); loadDoctors(); loadAppts(); } catch (e) { toast(e.message); }
+}
+
 async function book() {
   try {
-    show();
-    if (!$('slot').value) return show('Pick a date and time');
-    await api('/appointments', 'POST', { doctor_id: $('doctorSel').value, slot: new Date($('slot').value).toISOString() });
+    toast();
+    const sel = document.querySelector('input[name="doc"]:checked');
+    if (!sel) return toast('Choose a doctor first.');
+    if (!$('slot').value) return toast('Pick a date and time.');
+    await api('/appointments', 'POST', { doctor_id: sel.value, slot: new Date($('slot').value).toISOString() });
+    toast('Appointment booked.', 'ok');
     loadAppts();
-  } catch (e) { show(e.message); }
+  } catch (e) { toast(e.message); }
 }
-async function cancelAppt(id) { try { await api('/appointments/' + id, 'DELETE'); loadAppts(); } catch (e) { show(e.message); } }
+
+async function cancelAppt(id) {
+  try { await api('/appointments/' + id, 'DELETE'); toast('Appointment cancelled.', 'ok'); loadAppts(); }
+  catch (e) { toast(e.message); }
+}
+
 async function loadAppts() {
   const list = await api('/appointments');
+  const admin = user.role === 'admin';
+  $('apptTitle').textContent = admin ? 'All appointments' : 'Your appointments';
   $('appts').innerHTML = list.length ? list.map((a) => `
-    <div class="row ${a.status === 'cancelled' ? 'cancelled' : ''}">
-      <div>${new Date(a.slot).toLocaleString()} - ${esc(a.doctor)} (${esc(a.specialization)})
-        ${user.role === 'admin' ? `<div class="muted">Patient: ${esc(a.patient)}</div>` : ''}</div>
-      ${a.status === 'booked' ? `<button onclick="cancelAppt(${a.id})">Cancel</button>` : '<span class="muted">cancelled</span>'}
+    <div class="row ${a.status === 'cancelled' ? 'cancelled-row' : ''}">
+      <div>
+        <b>${esc(a.doctor)}</b> <span class="muted">· ${esc(a.specialization)}</span><br>
+        <span class="muted">${new Date(a.slot).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}${admin ? ' · ' + esc(a.patient) : ''}</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span class="status ${a.status}">${a.status}</span>
+        ${a.status === 'booked' ? `<button class="btn ghost small" onclick="cancelAppt(${a.id})">Cancel</button>` : ''}
+      </div>
     </div>`).join('') : '<p class="muted">No appointments yet.</p>';
 }
+
 async function render() {
-  const loggedIn = !!token;
-  $('authBox').style.display = loggedIn ? 'none' : 'block';
-  $('app').style.display = loggedIn ? 'block' : 'none';
-  if (!loggedIn) return;
-  $('who').textContent = `${user.name} (${user.role})`;
-  $('adminBox').style.display = user.role === 'admin' ? 'block' : 'none';
-  try { await loadDoctors(); await loadAppts(); } catch (e) { show(e.message); if (/token/i.test(e.message)) logout(); }
+  const signedIn = !!token && !!user;
+  $('authView').classList.toggle('hidden', signedIn);
+  $('appView').classList.toggle('hidden', !signedIn);
+  $('who').classList.toggle('hidden', !signedIn);
+  if (!signedIn) return;
+  $('whoName').textContent = user.name;
+  $('whoRole').textContent = user.role;
+  $('adminBox').classList.toggle('hidden', user.role !== 'admin');
+  try { await loadDoctors(); await loadAppts(); }
+  catch (e) { if (/token/i.test(e.message)) logout(); toast(e.message); }
 }
+document.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !token && e.target.tagName === 'INPUT') submitAuth(); });
 render();
 </script>
 </body>
