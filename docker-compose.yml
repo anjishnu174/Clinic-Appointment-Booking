@@ -1,0 +1,21 @@
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: clinic
+      POSTGRES_PASSWORD: clinic
+      POSTGRES_DB: clinic
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgres://clinic:clinic@db:5432/clinic
+      JWT_SECRET: local-dev-secret-change-me
+      ADMIN_EMAIL: admin@example.com
+    depends_on:
+      - db
+volumes:
+  pgdata:

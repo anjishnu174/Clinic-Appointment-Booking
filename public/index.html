@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Clinic Booking</title>
+<style>
+  body{font-family:system-ui,sans-serif;max-width:760px;margin:2rem auto;padding:0 1rem;color:#222}
+  h1{font-size:1.4rem} h2{font-size:1.1rem;margin-top:1.8rem}
+  input,select,button{padding:.5rem;margin:.2rem 0;font-size:1rem}
+  button{cursor:pointer}
+  .card{border:1px solid #ddd;border-radius:8px;padding:1rem;margin:.6rem 0}
+  .row{display:flex;justify-content:space-between;align-items:center;gap:1rem;border-bottom:1px solid #eee;padding:.5rem 0}
+  .err{color:#b00020}.muted{color:#666;font-size:.9rem}
+  .cancelled{text-decoration:line-through;color:#999}
+</style>
+</head>
+<body>
+<h1>Clinic Appointment Booking</h1>
+<div id="msg" class="err"></div>
+
+<div id="authBox" class="card">
+  <h2 style="margin-top:0">Login / Register</h2>
+  <input id="name" placeholder="Name (register only)"><br>
+  <input id="email" placeholder="Email"><br>
+  <input id="password" type="password" placeholder="Password (min 8 chars)"><br>
+  <button onclick="login()">Login</button>
+  <button onclick="register()">Register</button>
+</div>
+
+<div id="app" style="display:none">
+  <p><span id="who"></span> <button onclick="logout()">Logout</button></p>
+
+  <div id="adminBox" class="card" style="display:none">
+    <h2 style="margin-top:0">Admin: add doctor</h2>
+    <input id="dname" placeholder="Doctor name">
+    <input id="dspec" placeholder="Specialization">
+    <button onclick="addDoctor()">Add</button>
+  </div>
+
+  <h2>Book an appointment</h2>
+  <div class="card">
+    <select id="doctorSel"></select>
+    <input id="slot" type="datetime-local" step="1800">
+    <button onclick="book()">Book</button>
+    <div class="muted">Slots are on the hour or half hour.</div>
+  </div>
+
+  <h2>Appointments</h2>
+  <div id="appts"></div>
+</div>
+
+<script>
+let token = localStorage.getItem('token');
+let user = JSON.parse(localStorage.getItem('user') || 'null');
+const $ = (id) => document.getElementById(id);
+
+async function api(path, method = 'GET', body) {
+  const res = await fetch('/api' + path, {
+    method,
+    headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: 'Bearer ' + token } : {}) },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  if (res.status === 204) return null;
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || 'Request failed');
+  return data;
+}
+const show = (m) => ($('msg').textContent = m || '');
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+function saveSession(d) {
+  token = d.token; user = d.user;
+  localStorage.setItem('token', token);
+  localStorage.setItem('user', JSON.stringify(user));
+  render();
+}
+async function login() {
+  try { show(); saveSession(await api('/auth/login', 'POST', { email: $('email').value, password: $('password').value })); }
+  catch (e) { show(e.message); }
+}
+async function register() {
+  try { show(); saveSession(await api('/auth/register', 'POST', { name: $('name').value, email: $('email').value, password: $('password').value })); }
+  catch (e) { show(e.message); }
+}
+function logout() { localStorage.clear(); token = user = null; render(); }
+
+async function loadDoctors() {
+  const docs = await api('/doctors');
+  $('doctorSel').innerHTML = docs.map((d) => `<option value="${d.id}">${esc(d.name)} (${esc(d.specialization)})</option>`).join('');
+}
+async function addDoctor() {
+  try { show(); await api('/doctors', 'POST', { name: $('dname').value, specialization: $('dspec').value });
+    $('dname').value = $('dspec').value = ''; loadDoctors(); } catch (e) { show(e.message); }
+}
+async function book() {
+  try {
+    show();
+    if (!$('slot').value) return show('Pick a date and time');
+    await api('/appointments', 'POST', { doctor_id: $('doctorSel').value, slot: new Date($('slot').value).toISOString() });
+    loadAppts();
+  } catch (e) { show(e.message); }
+}
+async function cancelAppt(id) { try { await api('/appointments/' + id, 'DELETE'); loadAppts(); } catch (e) { show(e.message); } }
+async function loadAppts() {
+  const list = await api('/appointments');
+  $('appts').innerHTML = list.length ? list.map((a) => `
+    <div class="row ${a.status === 'cancelled' ? 'cancelled' : ''}">
+      <div>${new Date(a.slot).toLocaleString()} - ${esc(a.doctor)} (${esc(a.specialization)})
+        ${user.role === 'admin' ? `<div class="muted">Patient: ${esc(a.patient)}</div>` : ''}</div>
+      ${a.status === 'booked' ? `<button onclick="cancelAppt(${a.id})">Cancel</button>` : '<span class="muted">cancelled</span>'}
+    </div>`).join('') : '<p class="muted">No appointments yet.</p>';
+}
+async function render() {
+  const loggedIn = !!token;
+  $('authBox').style.display = loggedIn ? 'none' : 'block';
+  $('app').style.display = loggedIn ? 'block' : 'none';
+  if (!loggedIn) return;
+  $('who').textContent = `${user.name} (${user.role})`;
+  $('adminBox').style.display = user.role === 'admin' ? 'block' : 'none';
+  try { await loadDoctors(); await loadAppts(); } catch (e) { show(e.message); if (/token/i.test(e.message)) logout(); }
+}
+render();
+</script>
+</body>
+</html>
